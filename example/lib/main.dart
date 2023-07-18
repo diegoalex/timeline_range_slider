@@ -32,6 +32,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String durationString = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,21 +41,72 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'Timeline Range Slider',
-            ),
-            SizedBox(height: 20),
-            TimelineRangeSlider(),
-            Text(
-              'Timeline Range Slider',
-            ),
-          ],
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Text(
+                'Timeline Range Slider',
+              ),
+              const SizedBox(height: 20),
+              _buildSlider(),
+              const SizedBox(height: 20),
+              Text(
+                durationString,
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSlider() {
+    var now = DateTime.now();
+
+    return TimelineRangeSlider(
+      division: const TimeOfDay(hour: 0, minute: 15),
+      onChanged: (value) {
+        // _do(value);
+        // print(value);
+        setState(() {
+          durationString = value.toString();
+
+          int stInMin = value.start.hour * 60 + value.start.minute;
+          int enInMin = value.end.hour * 60 + value.end.minute;
+
+          // durationString += ' -  ${stInMin - enInMin} minutes';
+          durationString += ' -  ${(stInMin - enInMin) / 60} hs';
+        });
+      },
+      slideHeight: 50,
+      displayHandles: true,
+      displayLabels: true,
+      step: const TimeOfDay(hour: 0, minute: 30),
+      selectedInterval: DateTimeRange(
+        start: DateTime(now.year, now.month, now.day, 10, 00),
+        end: DateTime(now.year, now.month, now.day, 12, 00),
+      ),
+      minTime: const TimeOfDay(hour: 7, minute: 0),
+      maxTime: const TimeOfDay(hour: 20, minute: 00),
+      minInterval: const Duration(minutes: 60),
+      maxInterval: const Duration(hours: 4),
+      disabledIntervals: <Track>[
+        Track(
+          const TimeOfDay(hour: 8, minute: 30),
+          const TimeOfDay(hour: 9, minute: 0),
+        ),
+        Track(
+          const TimeOfDay(hour: 13, minute: 0),
+          const TimeOfDay(hour: 15, minute: 00),
+        ),
+        Track(
+          const TimeOfDay(hour: 16, minute: 30),
+          const TimeOfDay(hour: 18, minute: 0),
+        ),
+      ],
     );
   }
 }
