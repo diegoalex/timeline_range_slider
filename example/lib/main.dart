@@ -67,7 +67,6 @@ class _MyHomePageState extends State<MyHomePage> {
     var now = DateTime.now();
 
     return TimelineRangeSlider(
-      division: const TimeOfDay(hour: 0, minute: 15),
       onChanged: (value) {
         // _do(value);
         // print(value);
@@ -84,6 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
       slideHeight: 50,
       displayHandles: true,
       displayLabels: true,
+      division: const TimeOfDay(hour: 0, minute: 15),
       step: const TimeOfDay(hour: 0, minute: 30),
       selectedInterval: DateTimeRange(
         start: DateTime(now.year, now.month, now.day, 10, 00),
