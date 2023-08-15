@@ -52,6 +52,7 @@ class RenderTimelineRangeSlider extends RenderBox {
   TimeOfDay _division;
   ValueChanged<Track>? _onChanged;
   List<Track> _disabledIntervals;
+  bool _showHandleArea;
 
   // constructor
   RenderTimelineRangeSlider({
@@ -72,6 +73,7 @@ class RenderTimelineRangeSlider extends RenderBox {
     required TimeOfDay division,
     required ValueChanged<Track>? onChanged,
     required List<Track> disabledIntervals,
+    required bool showHandleArea,
   })  : _unavailableColor = unavailableColor,
         _backgroundColor = backgroundColor,
         _selectedColor = selectedColor,
@@ -88,7 +90,8 @@ class RenderTimelineRangeSlider extends RenderBox {
         _maxTime = maxTime,
         _division = division,
         _onChanged = onChanged,
-        _disabledIntervals = disabledIntervals {
+        _disabledIntervals = disabledIntervals,
+        _showHandleArea = showHandleArea {
     drag = HorizontalDragGestureRecognizer()..onUpdate = updateHandlePos;
     sortCheckValues();
 
@@ -254,6 +257,15 @@ class RenderTimelineRangeSlider extends RenderBox {
       return;
     }
     _disabledIntervals = List.from(value);
+    markNeedsPaint();
+  }
+
+  bool get showHandleArea => _showHandleArea;
+  set showHandleArea(bool value) {
+    if (value == showHandleArea) {
+      return;
+    }
+    _showHandleArea = value;
     markNeedsPaint();
   }
 
@@ -436,6 +448,35 @@ class RenderTimelineRangeSlider extends RenderBox {
     final rightPath = Path();
     rightPath.addRRect(rightHandleRect);
 
+    if (showHandleArea) {
+      //draw touch area
+      var handleBound = 12.0;
+      final touchPaint = Paint();
+      touchPaint
+        ..color = Colors.amber
+        ..style = PaintingStyle.fill;
+
+      // left handle touch area
+      final leftHandleTouchArea = RRect.fromRectAndRadius(
+        Offset(leftHandleX - 9 - handleBound, 0) &
+            Size(16 + handleBound + handleBound, slideHeight),
+        const Radius.circular(1),
+      );
+      final leftTouchPath = Path();
+      leftTouchPath.addRRect(leftHandleTouchArea);
+      canvas.drawPath(leftTouchPath, touchPaint);
+
+      // right handle touch area
+      final rightHandleTouchArea = RRect.fromRectAndRadius(
+        Offset(rightHandleX - 9 - handleBound, 0) &
+            Size(16 + handleBound + handleBound, slideHeight),
+        const Radius.circular(1),
+      );
+      final rightTouchPath = Path();
+      rightTouchPath.addRRect(rightHandleTouchArea);
+      touchPaint.color = Colors.red;
+      canvas.drawPath(rightTouchPath, touchPaint);
+    }
     canvas.drawPath(leftPath, paint);
     canvas.drawPath(leftPath, paintBorder);
     canvas.drawPath(rightPath, paint);
@@ -534,17 +575,21 @@ class RenderTimelineRangeSlider extends RenderBox {
     // (to get rid of out bounds clicks)
     final x = dragUpdateDetails.localPosition.dx.clamp(0, size.width);
 
+    // calculate the position of the click as a percentage
     final pos = x / size.width;
-
-    // final leftDistance = (pos - leftHandleValue).abs();
-    // final rightDistance = (pos - rightHandleValue).abs();
-    // final newPos = double.parse((findClosest(pos)).toStringAsFixed(12));
 
     // check which handle is being dragged
     var isLeftHandleChanged = false;
     var isRightHandleChanged = false;
+    // Calculate the handle bound area
+    // so that the user can drag the handle
+    // The standard handle bound is 0.04 for 15 minutes
+    // handleBound = [division_in_minutes] * 0.04 / 15
+    var handleBound = 0.05; //division.totalRangeTime * 0.04 / 15;
+    var stepSize = division.totalRangeTime * 0.05 / 15;
+    var stepHandleBound = handleBound + (stepSize - handleBound);
+
     //check if left handle is being dragged
-    double handleBound = 0.04;
     if ((pos + handleBound) >= leftHandleValue &&
         (pos - handleBound) <= leftHandleValue) {
       print('left handle');

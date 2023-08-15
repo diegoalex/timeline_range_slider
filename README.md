@@ -15,6 +15,8 @@ and the Flutter guide for
 
 A Flutter widget that allows you to easily select hour ranges on a timeline.
 
+Inspired on [react-timeline-range-slider](https://www.npmjs.com/package/@daveparslow/react-timeline-range-slider) and [booking_range_slider](https://github.com/mzdm/booking_range_slider).
+
 ## Usage
 
 To use this widget, simply add it to your Flutter app and provide the necessary parameters:

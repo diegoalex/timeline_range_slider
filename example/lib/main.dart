@@ -67,6 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var now = DateTime.now();
 
     return TimelineRangeSlider(
+      // showHandleArea: true,
       onChanged: (value) {
         // _do(value);
         // print(value);

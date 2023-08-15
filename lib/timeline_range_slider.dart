@@ -139,6 +139,9 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   /// [Track] must not overlap!
   final List<Track> disabledIntervals;
 
+  /// Whether should be displayed handle area (development purposes) .
+  final bool showHandleArea;
+
   const TimelineRangeSlider({
     Key? key,
     this.unavailableColor = _defaultColorUnavailable,
@@ -158,6 +161,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
     this.division = const TimeOfDay(hour: 0, minute: 30),
     required this.onChanged,
     required this.disabledIntervals,
+    this.showHandleArea = false,
   }) : super(key: key);
 
   @override
@@ -180,6 +184,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
       division: division,
       onChanged: onChanged,
       disabledIntervals: disabledIntervals,
+      showHandleArea: showHandleArea,
     );
   }
 
@@ -205,6 +210,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
       ..maxTime = maxTime
       ..division = division
       ..onChanged = onChanged
-      ..disabledIntervals = disabledIntervals;
+      ..disabledIntervals = disabledIntervals
+      ..showHandleArea = showHandleArea;
   }
 }
