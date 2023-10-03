@@ -5,8 +5,15 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.system;
 
   // This widget is the root of your application.
   @override
@@ -17,8 +24,18 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
+      darkTheme: ThemeData.dark(
+        useMaterial3: true,
+      ),
+      themeMode: _themeMode,
       home: const MyHomePage(title: 'Timeline Range Slider Demo'),
     );
+  }
+
+  void changeTheme(ThemeMode themeMode) {
+    setState(() {
+      _themeMode = themeMode;
+    });
   }
 }
 
@@ -40,6 +57,27 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        //switch theme button
+        actions: [
+          IconButton(
+            onPressed: () {
+              if (Theme.of(context).brightness == Brightness.dark) {
+                context.findAncestorStateOfType<_MyAppState>()?.changeTheme(
+                      ThemeMode.light,
+                    );
+              } else {
+                context.findAncestorStateOfType<_MyAppState>()?.changeTheme(
+                      ThemeMode.dark,
+                    );
+              }
+            },
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.brightness_2
+                  : Icons.brightness_7,
+            ),
+          ),
+        ],
       ),
       body: Center(
         child: Padding(
@@ -67,6 +105,9 @@ class _MyHomePageState extends State<MyHomePage> {
     var now = DateTime.now();
 
     return TimelineRangeSlider(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      unavailableColor: Theme.of(context).disabledColor,
+      borderColor: Theme.of(context).colorScheme.onSurface,
       // showHandleArea: true,
       onChanged: (value) {
         // _do(value);

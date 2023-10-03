@@ -16,6 +16,7 @@ import 'package:timeline_range_slider/src/track.dart';
 /// The widget is rendered using the [RenderBox] class and supports the following
 /// properties:
 ///
+/// * `borderColor`: The color of the border of the track.
 /// * `unavailableColor`: The color of the track for unavailable time intervals.
 /// * `availableColor`: The color of the track for available time intervals.
 /// * `selectedColor`: The color of the track for the selected time range.
@@ -35,6 +36,7 @@ import 'package:timeline_range_slider/src/track.dart';
 /// * `disabledIntervals`: A list of time intervals that are disabled.
 
 class RenderTimelineRangeSlider extends RenderBox {
+  Color _borderColor;
   Color _unavailableColor;
   Color _backgroundColor;
   Color _selectedColor;
@@ -56,6 +58,7 @@ class RenderTimelineRangeSlider extends RenderBox {
 
   // constructor
   RenderTimelineRangeSlider({
+    required Color borderColor,
     required Color unavailableColor,
     required Color backgroundColor,
     required Color selectedColor,
@@ -74,7 +77,8 @@ class RenderTimelineRangeSlider extends RenderBox {
     required ValueChanged<Track>? onChanged,
     required List<Track> disabledIntervals,
     required bool showHandleArea,
-  })  : _unavailableColor = unavailableColor,
+  })  : _borderColor = borderColor,
+        _unavailableColor = unavailableColor,
         _backgroundColor = backgroundColor,
         _selectedColor = selectedColor,
         _blockedColor = blockedColor,
@@ -107,6 +111,15 @@ class RenderTimelineRangeSlider extends RenderBox {
   }
 
   // Getters and setters
+  Color get borderColor => _borderColor;
+  set borderColor(Color value) {
+    if (value == borderColor) {
+      return;
+    }
+    _borderColor = value;
+    markNeedsPaint();
+  }
+
   Color get unavailableColor => _unavailableColor;
   set unavailableColor(Color value) {
     if (value == unavailableColor) {
@@ -373,7 +386,7 @@ class RenderTimelineRangeSlider extends RenderBox {
     final onePortion = size.width / total;
 
     final paintBorder = Paint()
-      ..color = Colors.grey.shade400
+      ..color = _borderColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = .5;
 

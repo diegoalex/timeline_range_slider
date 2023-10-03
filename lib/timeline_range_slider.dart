@@ -5,6 +5,7 @@ import 'package:timeline_range_slider/src/slider.dart';
 import 'package:timeline_range_slider/src/track.dart';
 export 'package:timeline_range_slider/src/track.dart';
 
+const _defaultColorBorder = Color.fromRGBO(189, 189, 189, 1);
 const _defaultColorUnavailable = Color.fromARGB(255, 233, 231, 231);
 const _defaultColorTrack = Color.fromARGB(255, 238, 240, 238);
 const _defaultColorSelected = Color.fromARGB(186, 110, 221, 163);
@@ -59,6 +60,10 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   /// Slider Background Color.
   /// Defaults to grey color.
   final Color backgroundColor;
+
+  /// Border Color.
+  /// Defaults to grey color.
+  final Color borderColor;
 
   /// Color for displaying the current selected [Track] range.
   /// Defaults to green color.
@@ -144,6 +149,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
 
   const TimelineRangeSlider({
     Key? key,
+    this.borderColor = _defaultColorBorder,
     this.unavailableColor = _defaultColorUnavailable,
     this.backgroundColor = _defaultColorTrack,
     this.selectedColor = _defaultColorSelected,
@@ -167,6 +173,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   @override
   RenderObject createRenderObject(BuildContext context) {
     return RenderTimelineRangeSlider(
+      borderColor: borderColor,
       unavailableColor: unavailableColor,
       backgroundColor: backgroundColor,
       selectedColor: selectedColor,
@@ -194,6 +201,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
     covariant RenderTimelineRangeSlider renderObject,
   ) {
     renderObject
+      ..borderColor = borderColor
       ..unavailableColor = unavailableColor
       ..backgroundColor = backgroundColor
       ..selectedColor = selectedColor
