@@ -485,11 +485,14 @@ class RenderTimelineRangeSlider extends RenderBox {
             Size(16 + handleBound + handleBound, slideHeight),
         const Radius.circular(1),
       );
+
       final rightTouchPath = Path();
       rightTouchPath.addRRect(rightHandleTouchArea);
+
       touchPaint.color = Colors.red;
       canvas.drawPath(rightTouchPath, touchPaint);
     }
+
     canvas.drawPath(leftPath, paint);
     canvas.drawPath(leftPath, paintBorder);
     canvas.drawPath(rightPath, paint);
@@ -598,20 +601,20 @@ class RenderTimelineRangeSlider extends RenderBox {
     // so that the user can drag the handle
     // The standard handle bound is 0.04 for 15 minutes
     // handleBound = [division_in_minutes] * 0.04 / 15
-    var handleBound = 0.05; //division.totalRangeTime * 0.04 / 15;
+    var handleBound = 0.08; //division.totalRangeTime * 0.04 / 15;
     var stepSize = division.totalRangeTime * 0.05 / 15;
     var stepHandleBound = handleBound + (stepSize - handleBound);
 
     //check if left handle is being dragged
-    if ((pos + handleBound) >= leftHandleValue &&
-        (pos - handleBound) <= leftHandleValue) {
+    if (pos >= (leftHandleValue - handleBound) &&
+        pos <= (leftHandleValue + handleBound)) {
       print('left handle');
       isLeftHandleChanged = true;
     }
 
     //check if right handle is being dragged
-    if ((pos + handleBound) >= rightHandleValue &&
-        (pos - handleBound) <= rightHandleValue) {
+    if (pos >= (rightHandleValue - handleBound) &&
+        pos <= (rightHandleValue + handleBound)) {
       print('right handle');
       isRightHandleChanged = true;
     }
@@ -647,8 +650,11 @@ class RenderTimelineRangeSlider extends RenderBox {
     }
 
     //move slider
-    leftHandleValue = leftHandleValue - diff;
-    rightHandleValue = rightHandleValue - diff;
+    leftHandleValue =
+        double.parse((findClosest(leftHandleValue - diff)).toStringAsFixed(12));
+    rightHandleValue = double.parse(
+        (findClosest(rightHandleValue - diff)).toStringAsFixed(12));
+    ;
 
     checkSliderAvailability();
 
