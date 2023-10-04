@@ -5,6 +5,7 @@ import 'package:timeline_range_slider/src/helpers.dart';
 import 'dart:ui' as ui;
 
 import 'package:timeline_range_slider/src/track.dart';
+import 'package:flutter/scheduler.dart';
 
 /// Renders a timeline range slider widget.
 ///
@@ -301,6 +302,8 @@ class RenderTimelineRangeSlider extends RenderBox {
     // translate() method remaps the (0,0) position on the canvas
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
+
+    checkSliderAvailability(firstLoad: true);
 
     paintRects(canvas);
 
@@ -731,7 +734,7 @@ class RenderTimelineRangeSlider extends RenderBox {
   }
 
   // The `checkSliderAvailability()` function calculates the time range selected by the user on a slider and checks if that range is available for booking.
-  void checkSliderAvailability() {
+  void checkSliderAvailability({bool firstLoad = false}) {
     // Calculate the total time range based on the minimum and maximum time values
     final total = totalTimeInMinutes;
     // Calculate the time value of the left handle of the slider
@@ -747,7 +750,13 @@ class RenderTimelineRangeSlider extends RenderBox {
     sliderBlocked = (track.isAvailable == false);
 
     // Call the onChanged callback function with the track value as an argument
-    if (onChanged != null) onChanged!(track);
+    if (firstLoad) {
+      SchedulerBinding.instance?.addPostFrameCallback((_) {
+        if (onChanged != null) onChanged!(track);
+      });
+    } else {
+      if (onChanged != null) onChanged!(track);
+    }
   }
 
   Track isSelectionAvailable(
