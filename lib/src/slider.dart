@@ -42,6 +42,7 @@ class RenderTimelineRangeSlider extends RenderBox {
   Color _backgroundColor;
   Color _selectedColor;
   Color _blockedColor;
+  Color _dividerColor;
   bool _displayHandles;
   bool _displayLabels;
   TimeOfDay _step;
@@ -64,6 +65,7 @@ class RenderTimelineRangeSlider extends RenderBox {
     required Color backgroundColor,
     required Color selectedColor,
     required Color blockedColor,
+    required Color dividerColor,
     required bool displayHandles,
     required bool displayLabels,
     required TimeOfDay step,
@@ -83,6 +85,7 @@ class RenderTimelineRangeSlider extends RenderBox {
         _backgroundColor = backgroundColor,
         _selectedColor = selectedColor,
         _blockedColor = blockedColor,
+        _dividerColor = dividerColor,
         _displayHandles = displayHandles,
         _displayLabels = displayLabels,
         _labelStyle = labelStyle,
@@ -154,6 +157,15 @@ class RenderTimelineRangeSlider extends RenderBox {
       return;
     }
     _blockedColor = value;
+    markNeedsPaint();
+  }
+
+  Color get dividerColor => _dividerColor;
+  set dividerColor(Color value) {
+    if (value == dividerColor) {
+      return;
+    }
+    _dividerColor = value;
     markNeedsPaint();
   }
 
@@ -291,6 +303,7 @@ class RenderTimelineRangeSlider extends RenderBox {
   double rightHandleValue = 0.8;
 
   bool sliderBlocked = false;
+  bool firstLoad = true;
 
   late HorizontalDragGestureRecognizer drag;
 
@@ -303,7 +316,9 @@ class RenderTimelineRangeSlider extends RenderBox {
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
 
-    checkSliderAvailability(firstLoad: true);
+    // if (firstLoad) {
+    //   checkSliderAvailability(initialised: false);
+    // }
 
     paintRects(canvas);
 
@@ -530,7 +545,7 @@ class RenderTimelineRangeSlider extends RenderBox {
 
     // create the paint for the lines
     final paint = Paint()
-      ..color = Colors.black26
+      ..color = dividerColor
       ..strokeWidth = .85;
 
     for (var i = 0; i <= freq; i++) {
@@ -569,18 +584,25 @@ class RenderTimelineRangeSlider extends RenderBox {
     double freq,
     TimeOfDay time,
   ) {
-    final hrs = Helpers.addLeadingZeroIfNeeded(time.hour);
+    final hrs = time.hour.toString();
     final mins = Helpers.addLeadingZeroIfNeeded(time.minute);
+
+    var lbl = hrs;
+    if (time.minute > 0) {
+      lbl = '$lbl:$mins';
+    }
+
+    var lblWidth = lbl.length > 2 ? 25.0 : 20.0;
 
     final textStyle = labelStyle.getTextStyle(textScaleFactor: .9);
     final paragraphStyle = ui.ParagraphStyle(
       textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
     );
     final paragraphBuilder = ui.ParagraphBuilder(paragraphStyle)
       ..pushStyle(textStyle)
-      ..addText('$hrs:$mins');
-    const constraints =
-        ui.ParagraphConstraints(width: 25); // size.width / freq);
+      ..addText(lbl);
+    var constraints = ui.ParagraphConstraints(width: lblWidth);
     final paragraph = paragraphBuilder.build();
     paragraph.layout(constraints);
 
@@ -734,7 +756,7 @@ class RenderTimelineRangeSlider extends RenderBox {
   }
 
   // The `checkSliderAvailability()` function calculates the time range selected by the user on a slider and checks if that range is available for booking.
-  void checkSliderAvailability({bool firstLoad = false}) {
+  void checkSliderAvailability({bool initialised = true}) {
     // Calculate the total time range based on the minimum and maximum time values
     final total = totalTimeInMinutes;
     // Calculate the time value of the left handle of the slider
@@ -750,12 +772,13 @@ class RenderTimelineRangeSlider extends RenderBox {
     sliderBlocked = (track.isAvailable == false);
 
     // Call the onChanged callback function with the track value as an argument
-    if (firstLoad) {
-      SchedulerBinding.instance?.addPostFrameCallback((_) {
-        if (onChanged != null) onChanged!(track);
-      });
-    } else {
+    if (initialised) {
       if (onChanged != null) onChanged!(track);
+    } else {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (onChanged != null) onChanged!(track);
+        // firstLoad = false;
+      });
     }
   }
 

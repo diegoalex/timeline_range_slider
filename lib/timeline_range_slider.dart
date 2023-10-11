@@ -10,6 +10,7 @@ const _defaultColorUnavailable = Color.fromARGB(255, 233, 231, 231);
 const _defaultColorTrack = Color.fromARGB(255, 238, 240, 238);
 const _defaultColorSelected = Color.fromARGB(186, 110, 221, 163);
 const _defaultColorBlocked = Color.fromARGB(185, 221, 110, 110);
+const _defaultColorDivider = Colors.black26;
 
 const _defaultLabelStyle = TextStyle(
   color: Colors.black87,
@@ -72,6 +73,10 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   /// Color for displaying the blocked [Track] ranges.
   /// Defaults to red color.
   final Color blockedColor;
+
+  /// Color for displaying the divider.
+  /// Defaults to black26.
+  final Color dividerColor;
 
   /// Whether should be displayed handles at the bounds of selected
   /// [Track] range. Defaults to true.
@@ -154,6 +159,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
     this.backgroundColor = _defaultColorTrack,
     this.selectedColor = _defaultColorSelected,
     this.blockedColor = _defaultColorBlocked,
+    this.dividerColor = _defaultColorDivider,
     this.displayHandles = true,
     this.displayLabels = true,
     this.labelStyle = _defaultLabelStyle,
@@ -178,6 +184,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
       backgroundColor: backgroundColor,
       selectedColor: selectedColor,
       blockedColor: blockedColor,
+      dividerColor: dividerColor,
       displayHandles: displayHandles,
       displayLabels: displayLabels,
       labelStyle: labelStyle,
@@ -206,6 +213,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
       ..backgroundColor = backgroundColor
       ..selectedColor = selectedColor
       ..blockedColor = blockedColor
+      ..dividerColor = dividerColor
       ..displayHandles = displayHandles
       ..displayLabels = displayLabels
       ..labelStyle = labelStyle
