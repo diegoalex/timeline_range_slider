@@ -303,7 +303,6 @@ class RenderTimelineRangeSlider extends RenderBox {
   double rightHandleValue = 0.8;
 
   bool sliderBlocked = false;
-  bool firstLoad = true;
 
   late HorizontalDragGestureRecognizer drag;
 
@@ -315,10 +314,6 @@ class RenderTimelineRangeSlider extends RenderBox {
     // translate() method remaps the (0,0) position on the canvas
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
-
-    // if (firstLoad) {
-    //   checkSliderAvailability(initialised: false);
-    // }
 
     paintRects(canvas);
 
@@ -451,6 +446,9 @@ class RenderTimelineRangeSlider extends RenderBox {
       selectedRect,
       Paint()..color = sliderBlocked ? blockedColor : selectedColor,
     );
+
+    //validate the slider on the first paint
+    checkSliderAvailability(initialised: false);
   }
 
   /// build the slider handles
@@ -777,7 +775,6 @@ class RenderTimelineRangeSlider extends RenderBox {
     } else {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (onChanged != null) onChanged!(track);
-        // firstLoad = false;
       });
     }
   }
