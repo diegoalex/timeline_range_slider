@@ -7,6 +7,8 @@ import 'dart:ui' as ui;
 import 'package:timeline_range_slider/src/track.dart';
 import 'package:flutter/scheduler.dart';
 
+import 'dart:developer' as developer;
+
 /// Renders a timeline range slider widget.
 ///
 /// This widget allows the user to select a range of time values from a timeline.
@@ -304,6 +306,8 @@ class RenderTimelineRangeSlider extends RenderBox {
 
   bool sliderBlocked = false;
 
+  bool loaded = false;
+
   late HorizontalDragGestureRecognizer drag;
 
   // Create the UI
@@ -437,6 +441,9 @@ class RenderTimelineRangeSlider extends RenderBox {
       canvas.drawRect(timePortionRect, paintBorder);
     }
 
+    //check slider availability
+    checkSliderAvailability(initialised: false);
+
     // Draw the Selected area
     final selectedRect = Rect.fromPoints(
       Offset(newSize.width * leftHandleValue, 0),
@@ -446,9 +453,6 @@ class RenderTimelineRangeSlider extends RenderBox {
       selectedRect,
       Paint()..color = sliderBlocked ? blockedColor : selectedColor,
     );
-
-    //validate the slider on the first paint
-    checkSliderAvailability(initialised: false);
   }
 
   /// build the slider handles
@@ -631,26 +635,30 @@ class RenderTimelineRangeSlider extends RenderBox {
     //check if left handle is being dragged
     if (pos >= (leftHandleValue - handleBound) &&
         pos <= (leftHandleValue + handleBound)) {
-      print('left handle');
+      developer.log('[TimeRangeSlider][updateHandlePos] Left Handle selected');
+
       isLeftHandleChanged = true;
     }
 
     //check if right handle is being dragged
     if (pos >= (rightHandleValue - handleBound) &&
         pos <= (rightHandleValue + handleBound)) {
-      print('right handle');
+      developer.log('[TimeRangeSlider][updateHandlePos] Right Handle selected');
+
       isRightHandleChanged = true;
     }
 
     // check if pos is between the handles
     if (pos > (leftHandleValue + handleBound) &&
         pos < (rightHandleValue - handleBound)) {
-      print('inside area');
+      developer.log('[TimeRangeSlider][updateHandlePos] Inside area selected');
+
       moveFixedSlider(pos);
       return;
     } else {
       if (!isLeftHandleChanged && !isRightHandleChanged) {
-        print('OURSIDE area');
+        developer
+            .log('[TimeRangeSlider][updateHandlePos] Outside area selected');
 
         return;
       }
@@ -717,7 +725,7 @@ class RenderTimelineRangeSlider extends RenderBox {
                 totalTimeInMinutes) /
             100;
 
-    print(
+    developer.log('[TimeRangeSlider][updateHandlePos] ' +
         '${isLeftHandle ? 'LEFT' : 'RIGHT'} - newval: $newInterval ----- minval: ${minInterval.inMinutes} ----- maxval: ${maxInterval?.inMinutes}');
 
     if (isLeftHandle) {
@@ -773,9 +781,12 @@ class RenderTimelineRangeSlider extends RenderBox {
     if (initialised) {
       if (onChanged != null) onChanged!(track);
     } else {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (onChanged != null) onChanged!(track);
-      });
+      if (sliderBlocked && loaded == false) {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          loaded = true;
+          if (onChanged != null) onChanged!(track);
+        });
+      }
     }
   }
 
@@ -785,7 +796,6 @@ class RenderTimelineRangeSlider extends RenderBox {
   ) {
     final isUnavailable = disabledIntervals.any((item) {
       if (item.isAvailable) {
-        // print('base');
         return false;
       }
 
@@ -797,25 +807,21 @@ class RenderTimelineRangeSlider extends RenderBox {
 
       // 120 - 180; 30 - 120
       if (leftHandleDur <= leftItemDur && rightHandleDur <= leftItemDur) {
-        // print('valid 1st');
         return false;
       }
 
       // 120 - 180; 180 - 210
       if (leftHandleDur >= rightItemDur && leftHandleDur >= rightItemDur) {
-        // print('valid 2nd');
         return false;
       }
 
       // 120 - 180; 120 - 150
       if (leftHandleDur >= leftItemDur && rightHandleDur <= rightItemDur) {
-        // print('1st');
         return true;
       }
 
       // 120 - 180; 60 - 200
       if (leftHandleDur <= leftItemDur && rightHandleDur >= rightItemDur) {
-        // print('2nd');
         return true;
       }
 
@@ -823,21 +829,18 @@ class RenderTimelineRangeSlider extends RenderBox {
       if (leftHandleDur <= leftItemDur &&
           rightHandleDur >= leftItemDur &&
           rightHandleDur <= rightItemDur) {
-        // print('3rd');
         return true;
       }
 
       // 120 - 180; 150 - 200
       if ((leftHandleDur >= leftItemDur && leftHandleDur <= rightItemDur) &&
           (rightHandleDur >= leftItemDur && rightHandleDur >= rightItemDur)) {
-        // print('4th');
         return true;
       }
 
-      // print('end');
       return false;
     });
-    // print('${!isUnavailable} \n\n');
+
     return Track(
       leftValueTime,
       rightValueTime,
@@ -875,7 +878,6 @@ class RenderTimelineRangeSlider extends RenderBox {
         closest = val;
       }
     }
-    // debugPrint('$input ----------- $list ----------- $closest');
 
     if (closest == -1) {
       return 0;
