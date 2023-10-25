@@ -152,6 +152,9 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   /// Whether should be displayed handle area (development purposes) .
   final bool showHandleArea;
 
+  /// Whether the time is displayed in 24-hour format.
+  final bool user24HourFormat;
+
   const TimelineRangeSlider({
     Key? key,
     this.borderColor = _defaultColorBorder,
@@ -174,6 +177,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
     required this.onChanged,
     required this.disabledIntervals,
     this.showHandleArea = false,
+    this.user24HourFormat = true,
   }) : super(key: key);
 
   @override
@@ -199,6 +203,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
       onChanged: onChanged,
       disabledIntervals: disabledIntervals,
       showHandleArea: showHandleArea,
+      user24HourFormat: user24HourFormat,
     );
   }
 
@@ -227,6 +232,7 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
       ..division = division
       ..onChanged = onChanged
       ..disabledIntervals = disabledIntervals
-      ..showHandleArea = showHandleArea;
+      ..showHandleArea = showHandleArea
+      ..user24HourFormat = user24HourFormat;
   }
 }

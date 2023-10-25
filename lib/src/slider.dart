@@ -59,6 +59,7 @@ class RenderTimelineRangeSlider extends RenderBox {
   ValueChanged<Track>? _onChanged;
   List<Track> _disabledIntervals;
   bool _showHandleArea;
+  bool _user24HourFormat = true;
 
   // constructor
   RenderTimelineRangeSlider({
@@ -82,6 +83,7 @@ class RenderTimelineRangeSlider extends RenderBox {
     required ValueChanged<Track>? onChanged,
     required List<Track> disabledIntervals,
     required bool showHandleArea,
+    required bool user24HourFormat,
   })  : _borderColor = borderColor,
         _unavailableColor = unavailableColor,
         _backgroundColor = backgroundColor,
@@ -101,19 +103,12 @@ class RenderTimelineRangeSlider extends RenderBox {
         _division = division,
         _onChanged = onChanged,
         _disabledIntervals = disabledIntervals,
-        _showHandleArea = showHandleArea {
+        _showHandleArea = showHandleArea,
+        _user24HourFormat = user24HourFormat {
     drag = HorizontalDragGestureRecognizer()..onUpdate = updateHandlePos;
     sortCheckValues();
 
-    leftHandleValue =
-        (TimeOfDay.fromDateTime(selectedInterval.start).totalRangeTime -
-                minTime.totalRangeTime) /
-            totalTimeInMinutes;
-
-    rightHandleValue =
-        (TimeOfDay.fromDateTime(selectedInterval.end).totalRangeTime -
-                minTime.totalRangeTime) /
-            totalTimeInMinutes;
+    configSelectedInterval();
   }
 
   // Getters and setters
@@ -222,6 +217,8 @@ class RenderTimelineRangeSlider extends RenderBox {
       return;
     }
     _selectedInterval = value;
+
+    configSelectedInterval();
     markNeedsPaint();
   }
 
@@ -297,6 +294,15 @@ class RenderTimelineRangeSlider extends RenderBox {
     markNeedsPaint();
   }
 
+  bool get user24HourFormat => _user24HourFormat;
+  set user24HourFormat(bool value) {
+    if (value == user24HourFormat) {
+      return;
+    }
+    _user24HourFormat = value;
+    markNeedsPaint();
+  }
+
   static const minWidth = 120.0;
 
   double get handleSize => (labelStyle.fontSize ?? 3);
@@ -309,6 +315,19 @@ class RenderTimelineRangeSlider extends RenderBox {
   bool loaded = false;
 
   late HorizontalDragGestureRecognizer drag;
+
+  void configSelectedInterval() {
+    //define selected interval
+    leftHandleValue =
+        (TimeOfDay.fromDateTime(selectedInterval.start).totalRangeTime -
+                minTime.totalRangeTime) /
+            totalTimeInMinutes;
+
+    rightHandleValue =
+        (TimeOfDay.fromDateTime(selectedInterval.end).totalRangeTime -
+                minTime.totalRangeTime) /
+            totalTimeInMinutes;
+  }
 
   // Create the UI
   @override
@@ -586,8 +605,12 @@ class RenderTimelineRangeSlider extends RenderBox {
     double freq,
     TimeOfDay time,
   ) {
-    final hrs = time.hour.toString();
+    var hrs = time.hour.toString();
     final mins = Helpers.addLeadingZeroIfNeeded(time.minute);
+
+    if (time.hour > 12 && user24HourFormat == false) {
+      hrs = (time.hour - 12).toString();
+    }
 
     var lbl = hrs;
     if (time.minute > 0) {
@@ -628,7 +651,7 @@ class RenderTimelineRangeSlider extends RenderBox {
     // so that the user can drag the handle
     // The standard handle bound is 0.04 for 15 minutes
     // handleBound = [division_in_minutes] * 0.04 / 15
-    var handleBound = 0.08; //division.totalRangeTime * 0.04 / 15;
+    var handleBound = 0.09; //division.totalRangeTime * 0.04 / 15;
     var stepSize = division.totalRangeTime * 0.05 / 15;
     var stepHandleBound = handleBound + (stepSize - handleBound);
 
