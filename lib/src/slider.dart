@@ -9,6 +9,14 @@ import 'package:flutter/scheduler.dart';
 
 import 'dart:developer' as developer;
 
+/// The state of the slider.
+/// [leftHandle]: The left handle is being dragged.
+/// [rightHandle]: The right handle is being dragged.
+/// [slider]: The slider is being dragged.
+/// [sliderArea]: The slider area is being dragged.
+/// [none]: No drag is being performed.
+enum SliderState { leftHandle, rightHandle, slider, sliderArea, none }
+
 /// Renders a timeline range slider widget.
 ///
 /// This widget allows the user to select a range of time values from a timeline.
@@ -105,7 +113,35 @@ class RenderTimelineRangeSlider extends RenderBox {
         _disabledIntervals = disabledIntervals,
         _showHandleArea = showHandleArea,
         _user24HourFormat = user24HourFormat {
-    drag = HorizontalDragGestureRecognizer()..onUpdate = updateHandlePos;
+    drag = HorizontalDragGestureRecognizer()
+      ..onDown = (DragDownDetails details) {
+        // Handle drag down here
+        onDragDown(details);
+      }
+      ..onEnd = (DragEndDetails details) {
+        // Handle drag end here
+        onDragEnd();
+      }
+      ..onUpdate = (DragUpdateDetails details) {
+        // Handle drag event here
+        developer.log('[TimeRangeSlider][drag] DRAG UPDATE');
+
+        updateHandlePos(details);
+      };
+    //tap gesture recognizer
+
+    tapRecognizer = TapGestureRecognizer()
+      ..onTapUp = (TapUpDetails details) {
+        // Handle tap up here
+        developer.log('[TimeRangeSlider][tapRecognizer] TAP UP');
+        onTapUp(details);
+      };
+
+    //configure slider width based on min and max time divided by the step (10px per step)
+    sliderWidth = (maxTime.totalRangeTime - minTime.totalRangeTime) /
+        step.totalRangeTime *
+        stepSize;
+
     sortCheckValues();
 
     configSelectedInterval();
@@ -314,7 +350,18 @@ class RenderTimelineRangeSlider extends RenderBox {
 
   bool loaded = false;
 
+  double sliderWidth = 500;
+  double stepSize = 20.0;
+
+  Canvas? canvas;
+
+  Offset paintOffset = Offset.zero;
+
   late HorizontalDragGestureRecognizer drag;
+  late TapGestureRecognizer tapRecognizer;
+
+  //slider state (left handle, right handle, slider, slider area, none)
+  SliderState sliderState = SliderState.none;
 
   void configSelectedInterval() {
     //define selected interval
@@ -332,32 +379,24 @@ class RenderTimelineRangeSlider extends RenderBox {
   // Create the UI
   @override
   void paint(PaintingContext context, Offset offset) {
-    final canvas = context.canvas;
+    canvas = context.canvas;
 
     // translate() method remaps the (0,0) position on the canvas
-    canvas.save();
-    canvas.translate(offset.dx, offset.dy);
+    canvas!.save();
+    canvas!.translate(paintOffset.dx, paintOffset.dy);
 
-    paintRects(canvas);
+    paintRects(canvas!);
 
     if (displayHandles) {
-      paintHandles(canvas);
+      paintHandles(canvas!);
     }
 
     if (displayLabels) {
-      paintBars(canvas);
+      paintBars(canvas!);
     }
 
     // restore the translation at the beginning
-    canvas.restore();
-  }
-
-  @override
-  void performResize() {
-    size = constraints.constrain(Size(
-      600,
-      slideHeight,
-    ));
+    canvas!.restore();
   }
 
   void sortCheckValues() {
@@ -476,22 +515,22 @@ class RenderTimelineRangeSlider extends RenderBox {
 
   /// build the slider handles
   void paintHandles(Canvas canvas) {
-    final paint = Paint()..color = const Color.fromARGB(255, 43, 43, 43);
+    final paint = Paint()..color = Colors.white;
 
     final paintBorder = Paint()
       ..color = const Color.fromARGB(255, 228, 224, 224)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6.0;
+      ..strokeWidth = 0.0;
 
     final leftHandleX = leftHandleValue * size.width;
     final rightHandleX = rightHandleValue * size.width;
 
-    const handleSize = Size(8, 20);
+    const handleSize = Size(4, 20);
     final leftHandleRect = RRect.fromRectAndRadius(
-        Offset(leftHandleX - 5, (size.height / 2) - 10) & handleSize,
+        Offset(leftHandleX + 4, (size.height / 2) - 10) & handleSize,
         const Radius.circular(1));
     final rightHandleRect = RRect.fromRectAndRadius(
-        Offset(rightHandleX - 5, (size.height / 2) - 10) & handleSize,
+        Offset(rightHandleX - 8, (size.height / 2) - 10) & handleSize,
         const Radius.circular(1));
 
     final leftPath = Path();
@@ -502,7 +541,7 @@ class RenderTimelineRangeSlider extends RenderBox {
 
     if (showHandleArea) {
       //draw touch area
-      var handleBound = 12.0;
+      var handleBound = 4.0;
       final touchPaint = Paint();
       touchPaint
         ..color = Colors.amber
@@ -510,7 +549,7 @@ class RenderTimelineRangeSlider extends RenderBox {
 
       // left handle touch area
       final leftHandleTouchArea = RRect.fromRectAndRadius(
-        Offset(leftHandleX - 9 - handleBound, 0) &
+        Offset(leftHandleX - handleBound, 0) &
             Size(16 + handleBound + handleBound, slideHeight),
         const Radius.circular(1),
       );
@@ -520,7 +559,7 @@ class RenderTimelineRangeSlider extends RenderBox {
 
       // right handle touch area
       final rightHandleTouchArea = RRect.fromRectAndRadius(
-        Offset(rightHandleX - 9 - handleBound, 0) &
+        Offset(rightHandleX - 14 - handleBound, 0) &
             Size(16 + handleBound + handleBound, slideHeight),
         const Radius.circular(1),
       );
@@ -642,52 +681,54 @@ class RenderTimelineRangeSlider extends RenderBox {
     final x = dragUpdateDetails.localPosition.dx.clamp(0, size.width);
 
     // calculate the position of the click as a percentage
-    final pos = x / size.width;
+    var offsetDiff = (paintOffset.dx / size.width) * -1;
 
-    // check which handle is being dragged
-    var isLeftHandleChanged = false;
-    var isRightHandleChanged = false;
-    // Calculate the handle bound area
-    // so that the user can drag the handle
-    // The standard handle bound is 0.04 for 15 minutes
-    // handleBound = [division_in_minutes] * 0.04 / 15
-    var handleBound = 0.09; //division.totalRangeTime * 0.04 / 15;
-    var stepSize = division.totalRangeTime * 0.05 / 15;
-    var stepHandleBound = handleBound + (stepSize - handleBound);
+    // calculate the position of the click as a percentage
+    final pos = (x / size.width);
+    final posOffset = pos + offsetDiff;
 
-    //check if left handle is being dragged
-    if (pos >= (leftHandleValue - handleBound) &&
-        pos <= (leftHandleValue + handleBound)) {
-      developer.log('[TimeRangeSlider][updateHandlePos] Left Handle selected');
+    developer.log(
+        '[TimeRangeSlider][updateHandlePos] ${dragUpdateDetails.localPosition.distance} sliderState: $sliderState , pos: $pos | $posOffset, leftHandleValue: $leftHandleValue , rightHandleValue: $rightHandleValue');
 
-      isLeftHandleChanged = true;
+    //check acrion based on slider state
+    switch (sliderState) {
+      case SliderState.leftHandle:
+        resizeSlider(true, posOffset);
+        break;
+      case SliderState.rightHandle:
+        resizeSlider(false, posOffset);
+        break;
+      case SliderState.slider:
+        moveFixedSlider(posOffset);
+        break;
+      case SliderState.sliderArea:
+        scrollView(dragUpdateDetails);
+        break;
+      default:
     }
+  }
 
-    //check if right handle is being dragged
-    if (pos >= (rightHandleValue - handleBound) &&
-        pos <= (rightHandleValue + handleBound)) {
-      developer.log('[TimeRangeSlider][updateHandlePos] Right Handle selected');
+  // Move view inside the scrollview
+  void scrollView(DragUpdateDetails dragUpdateDetails) {
+    developer.log(
+        '[TimeRangeSlider]ScrollView ${dragUpdateDetails.delta.dx} | ${dragUpdateDetails.delta.direction} , offset: ${paintOffset.dx} ');
 
-      isRightHandleChanged = true;
-    }
+    if ((paintOffset.dx + dragUpdateDetails.delta.dx) > 0) {
+      paintOffset = Offset(
+        0.0,
+        paintOffset.dy,
+      );
+      markNeedsPaint();
 
-    // check if pos is between the handles
-    if (pos > (leftHandleValue + handleBound) &&
-        pos < (rightHandleValue - handleBound)) {
-      developer.log('[TimeRangeSlider][updateHandlePos] Inside area selected');
-
-      moveFixedSlider(pos);
       return;
-    } else {
-      if (!isLeftHandleChanged && !isRightHandleChanged) {
-        developer
-            .log('[TimeRangeSlider][updateHandlePos] Outside area selected');
-
-        return;
-      }
     }
 
-    resizeSlider(isLeftHandleChanged, pos);
+    paintOffset = Offset(
+      paintOffset.dx + dragUpdateDetails.delta.dx,
+      paintOffset.dy,
+    );
+
+    markNeedsPaint();
   }
 
   void moveFixedSlider(double position) {
@@ -708,7 +749,6 @@ class RenderTimelineRangeSlider extends RenderBox {
         double.parse((findClosest(leftHandleValue - diff)).toStringAsFixed(12));
     rightHandleValue = double.parse(
         (findClosest(rightHandleValue - diff)).toStringAsFixed(12));
-    ;
 
     checkSliderAvailability();
 
@@ -908,6 +948,82 @@ class RenderTimelineRangeSlider extends RenderBox {
     return closest;
   }
 
+  void onDragEnd() {
+    developer.log('[TimeRangeSlider][onDragEnd]');
+    sliderState = SliderState.none;
+  }
+
+  // Handle SliderState on drag down
+  void onDragDown(DragDownDetails details) {
+    developer.log('[TimeRangeSlider][onDragDown]');
+
+    // get position of teh click
+    final x = details.localPosition.dx; //.clamp(0, size.width);
+
+    var offsetDiff = (paintOffset.dx / size.width) * -1;
+
+    // calculate the position of the click as a percentage
+    final pos = (x / size.width);
+    final posOffset = pos + offsetDiff;
+    var leftHandlePos = leftHandleValue;
+    var rightHandlePos = rightHandleValue;
+
+    developer.log(
+        '[TimeRangeSlider][onDragDown] pos: $pos, posOffset: $posOffset, offsetDiff: $offsetDiff, leftHandle: $leftHandleValue | $leftHandlePos , rightHandle: $rightHandleValue | $rightHandlePos');
+
+    var handleBound = 0.02;
+
+    //check if left handle is being dragged
+    if (posOffset >= (leftHandlePos - handleBound) &&
+        posOffset <= (leftHandlePos + handleBound)) {
+      developer.log('[TimeRangeSlider][onDragDown] Left Handle selected');
+
+      sliderState = SliderState.leftHandle;
+      return;
+    }
+
+    //check if right handle is being dragged
+    if (posOffset >= (rightHandlePos - handleBound) &&
+        posOffset <= (rightHandlePos + handleBound)) {
+      developer.log('[TimeRangeSlider][onDragDown] Right Handle selected');
+
+      sliderState = SliderState.rightHandle;
+      return;
+    }
+
+    // check if pos is between the handles
+    if (posOffset > (leftHandlePos + handleBound) &&
+        posOffset < (rightHandlePos - handleBound)) {
+      developer.log('[TimeRangeSlider][onDragDown] Inside area selected');
+
+      sliderState = SliderState.slider;
+      return;
+    } else {
+      developer.log('[TimeRangeSlider][onDragDown] Outside area selected');
+
+      sliderState = SliderState.sliderArea;
+      return;
+    }
+  }
+
+  //ontapup
+  void onTapUp(TapUpDetails details) {
+    developer.log('[TimeRangeSlider][onTapUp]');
+
+    // restrict a number between 0 and size of the widget
+    // (to get rid of out bounds clicks)
+    final x = details.localPosition.dx.clamp(0, size.width);
+
+    // calculate the position of the click as a percentage
+    var offsetDiff = (paintOffset.dx / size.width) * -1;
+
+    // calculate the position of the click as a percentage
+    final pos = (x / size.width);
+    final posOffset = pos + offsetDiff;
+
+    moveFixedSlider(posOffset);
+  }
+
   @override
   double computeMinIntrinsicWidth(double height) => minWidth;
 
@@ -925,18 +1041,29 @@ class RenderTimelineRangeSlider extends RenderBox {
   bool hitTestSelf(Offset position) => true;
 
   @override
-  bool get sizedByParent => true;
+  bool get sizedByParent => false;
+
+  @override
+  void performLayout() {
+    size = Size(
+      sliderWidth,
+      slideHeight,
+    );
+  }
 
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     assert(debugHandleEvent(event, entry));
+
     if (event is PointerDownEvent) {
       drag.addPointer(event);
+      tapRecognizer.addPointer(event);
     }
   }
 
   @override
   void detach() {
+    tapRecognizer.dispose();
     drag.dispose();
     super.detach();
   }

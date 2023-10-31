@@ -89,7 +89,10 @@ class _MyHomePageState extends State<MyHomePage> {
                 'Timeline Range Slider',
               ),
               const SizedBox(height: 20),
-              _buildSlider(),
+              SingleChildScrollView(
+                  clipBehavior: Clip.none,
+                  scrollDirection: Axis.horizontal,
+                  child: _buildSlider()),
               const SizedBox(height: 20),
               Text(
                 durationString,
@@ -124,17 +127,18 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       slideHeight: 50,
       displayHandles: true,
+      showHandleArea: false,
       displayLabels: true,
       division: const TimeOfDay(hour: 0, minute: 15),
       step: const TimeOfDay(hour: 0, minute: 30),
       selectedInterval: DateTimeRange(
-        start: DateTime(now.year, now.month, now.day, 10, 00),
-        end: DateTime(now.year, now.month, now.day, 12, 00),
+        start: DateTime(now.year, now.month, now.day, 15, 00),
+        end: DateTime(now.year, now.month, now.day, 18, 00),
       ),
       minTime: const TimeOfDay(hour: 7, minute: 0),
       maxTime: const TimeOfDay(hour: 20, minute: 00),
-      minInterval: const Duration(minutes: 60),
-      maxInterval: const Duration(hours: 4),
+      // minInterval: const Duration(minutes: 60),
+      // maxInterval: const Duration(hours: 4),
       disabledIntervals: <Track>[
         Track(
           const TimeOfDay(hour: 8, minute: 30),
