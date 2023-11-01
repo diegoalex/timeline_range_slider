@@ -132,8 +132,8 @@ class _MyHomePageState extends State<MyHomePage> {
       division: const TimeOfDay(hour: 0, minute: 15),
       step: const TimeOfDay(hour: 0, minute: 30),
       selectedInterval: DateTimeRange(
-        start: DateTime(now.year, now.month, now.day, 8, 00),
-        end: DateTime(now.year, now.month, now.day, 18, 00),
+        start: DateTime(now.year, now.month, now.day, 9, 00),
+        end: DateTime(now.year, now.month, now.day, 12, 00),
       ),
       minTime: const TimeOfDay(hour: 7, minute: 0),
       maxTime: const TimeOfDay(hour: 20, minute: 00),

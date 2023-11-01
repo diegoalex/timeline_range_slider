@@ -146,6 +146,14 @@ class RenderTimelineRangeSlider extends RenderBox {
     sortCheckValues();
 
     configSelectedInterval();
+
+    // set position at the center of the slider on the first load
+    var startPos = (leftHandleValue * sliderWidth) * -1;
+
+    paintOffset = Offset(
+      startPos + 20,
+      paintOffset.dy,
+    );
   }
 
   // Getters and setters
