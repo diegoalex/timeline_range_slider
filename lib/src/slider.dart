@@ -133,7 +133,6 @@ class RenderTimelineRangeSlider extends RenderBox {
     tapRecognizer = TapGestureRecognizer()
       ..onTapUp = (TapUpDetails details) {
         // Handle tap up here
-        developer.log('[TimeRangeSlider][tapRecognizer] TAP UP');
         onTapUp(details);
       };
 
@@ -142,6 +141,8 @@ class RenderTimelineRangeSlider extends RenderBox {
         step.totalRangeTime *
         stepSize;
 
+    //configure slider height with the
+    sliderHeightArea = slideHeight - 10;
     sortCheckValues();
 
     configSelectedInterval();
@@ -351,6 +352,7 @@ class RenderTimelineRangeSlider extends RenderBox {
   bool loaded = false;
 
   double sliderWidth = 500;
+  double sliderHeightArea = 50;
   double stepSize = 20.0;
 
   Canvas? canvas;
@@ -456,7 +458,7 @@ class RenderTimelineRangeSlider extends RenderBox {
 
   /// Create the blocks for the available and unavailable times
   void paintRects(Canvas canvas) {
-    var newSize = size; //Size(size.width, slideHeight);
+    var newSize = Size(size.width, sliderHeightArea);
     final total = totalTimeInMinutes;
     final onePortion = size.width / total;
 
@@ -469,10 +471,12 @@ class RenderTimelineRangeSlider extends RenderBox {
     final availablePaint = Paint()
       ..color = backgroundColor
       ..style = PaintingStyle.fill;
+
     final baseRect = Rect.fromPoints(
       Offset.zero,
       newSize.bottomRight(Offset.zero),
     );
+
     canvas.drawRect(baseRect, availablePaint);
     canvas.drawRect(baseRect, paintBorder);
 
@@ -496,7 +500,7 @@ class RenderTimelineRangeSlider extends RenderBox {
       );
 
       canvas.drawRect(timePortionRect, paint);
-      canvas.drawRect(timePortionRect, paintBorder);
+      // canvas.drawRect(timePortionRect, paintBorder);
     }
 
     //check slider availability
@@ -507,30 +511,36 @@ class RenderTimelineRangeSlider extends RenderBox {
       Offset(newSize.width * leftHandleValue, 0),
       Offset(newSize.width * rightHandleValue, newSize.height),
     );
-    canvas.drawRect(
-      selectedRect,
+
+    final roundedeRect =
+        RRect.fromRectAndRadius(selectedRect, const Radius.circular(4));
+
+    final roundedPath = Path();
+    roundedPath.addRRect(roundedeRect);
+
+    canvas.drawPath(
+      roundedPath,
       Paint()..color = sliderBlocked ? blockedColor : selectedColor,
     );
+    if (sliderState == SliderState.slider) {
+      canvas.drawPath(roundedPath, paintBorder);
+    }
   }
 
   /// build the slider handles
   void paintHandles(Canvas canvas) {
     final paint = Paint()..color = Colors.white;
-
-    final paintBorder = Paint()
-      ..color = const Color.fromARGB(255, 228, 224, 224)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.0;
+    final paintActive = Paint()..color = Colors.grey;
 
     final leftHandleX = leftHandleValue * size.width;
     final rightHandleX = rightHandleValue * size.width;
 
-    const handleSize = Size(4, 20);
+    const handleSize = Size(3, 20);
     final leftHandleRect = RRect.fromRectAndRadius(
-        Offset(leftHandleX + 4, (size.height / 2) - 10) & handleSize,
+        Offset(leftHandleX + 4, (sliderHeightArea / 2) - 10) & handleSize,
         const Radius.circular(1));
     final rightHandleRect = RRect.fromRectAndRadius(
-        Offset(rightHandleX - 8, (size.height / 2) - 10) & handleSize,
+        Offset(rightHandleX - 7, (sliderHeightArea / 2) - 10) & handleSize,
         const Radius.circular(1));
 
     final leftPath = Path();
@@ -541,7 +551,7 @@ class RenderTimelineRangeSlider extends RenderBox {
 
     if (showHandleArea) {
       //draw touch area
-      var handleBound = 4.0;
+      var handleBound = 0.02;
       final touchPaint = Paint();
       touchPaint
         ..color = Colors.amber
@@ -549,8 +559,8 @@ class RenderTimelineRangeSlider extends RenderBox {
 
       // left handle touch area
       final leftHandleTouchArea = RRect.fromRectAndRadius(
-        Offset(leftHandleX - handleBound, 0) &
-            Size(16 + handleBound + handleBound, slideHeight),
+        Offset(leftHandleX, 0) &
+            Size(12 + handleBound + handleBound, sliderHeightArea),
         const Radius.circular(1),
       );
       final leftTouchPath = Path();
@@ -559,8 +569,8 @@ class RenderTimelineRangeSlider extends RenderBox {
 
       // right handle touch area
       final rightHandleTouchArea = RRect.fromRectAndRadius(
-        Offset(rightHandleX - 14 - handleBound, 0) &
-            Size(16 + handleBound + handleBound, slideHeight),
+        Offset(rightHandleX - 13 - handleBound, 0) &
+            Size(13 + handleBound, sliderHeightArea),
         const Radius.circular(1),
       );
 
@@ -571,10 +581,12 @@ class RenderTimelineRangeSlider extends RenderBox {
       canvas.drawPath(rightTouchPath, touchPaint);
     }
 
-    canvas.drawPath(leftPath, paint);
-    canvas.drawPath(leftPath, paintBorder);
-    canvas.drawPath(rightPath, paint);
-    canvas.drawPath(rightPath, paintBorder);
+    canvas.drawPath(
+        leftPath, sliderState == SliderState.leftHandle ? paintActive : paint);
+    // canvas.drawPath(leftPath, paintBorder);
+    canvas.drawPath(rightPath,
+        sliderState == SliderState.rightHandle ? paintActive : paint);
+    // canvas.drawPath(rightPath, paintBorder);
   }
 
   /// Create the steps divider and the labels
@@ -609,10 +621,10 @@ class RenderTimelineRangeSlider extends RenderBox {
       ..strokeWidth = .85;
 
     for (var i = 0; i <= freq; i++) {
-      var upperPoint = Offset(spacing * i, slideHeight);
+      var upperPoint = Offset(spacing * i, sliderHeightArea);
       final lowerPoint = Offset(
         spacing * i,
-        slideHeight - (isHour ? 10 : 5),
+        sliderHeightArea - (isHour ? 10 : 5),
       );
 
       // draw the line
@@ -656,6 +668,8 @@ class RenderTimelineRangeSlider extends RenderBox {
       lbl = '$lbl:$mins';
     }
 
+    lbl = lbl + (user24HourFormat ? '' : time.period.name);
+
     var lblWidth = lbl.length > 2 ? 25.0 : 20.0;
 
     final textStyle = labelStyle.getTextStyle(textScaleFactor: .9);
@@ -670,8 +684,8 @@ class RenderTimelineRangeSlider extends RenderBox {
     final paragraph = paragraphBuilder.build();
     paragraph.layout(constraints);
 
-    final textOffset =
-        Offset(lowerPoint.dx - 10, slideHeight); //.scale(1 * 0.9995, 2.25);
+    final textOffset = Offset(
+        lowerPoint.dx - 10, sliderHeightArea); //.scale(1 * 0.9995, 2.25);
     canvas.drawParagraph(paragraph, textOffset);
   }
 
@@ -739,16 +753,28 @@ class RenderTimelineRangeSlider extends RenderBox {
     // get diff between center and new position
     var diff = centerPos - newPos;
 
+    developer.log(
+        '[TimeRangeSlider][moveFixedSlider] centerPos: $centerPos , newPos: $newPos , diff: $diff');
+
+    var leftDiff = leftHandleValue - diff;
+    var rightDiff = rightHandleValue - diff;
+
+    var newLeftValue =
+        double.parse((findClosest(leftDiff)).toStringAsFixed(12));
+    var newRightValue =
+        double.parse((findClosest(rightDiff)).toStringAsFixed(12));
+
     // check if the new position is out of bounds
-    if (leftHandleValue - diff < 0 || rightHandleValue - diff > 1) {
+    if (leftDiff < 0) {
+      return;
+    }
+    if (rightDiff >= 1 && newRightValue == rightHandleValue) {
       return;
     }
 
     //move slider
-    leftHandleValue =
-        double.parse((findClosest(leftHandleValue - diff)).toStringAsFixed(12));
-    rightHandleValue = double.parse(
-        (findClosest(rightHandleValue - diff)).toStringAsFixed(12));
+    leftHandleValue = newLeftValue;
+    rightHandleValue = newRightValue;
 
     checkSliderAvailability();
 
@@ -758,10 +784,8 @@ class RenderTimelineRangeSlider extends RenderBox {
   void resizeSlider(bool isLeftHandle, double position) {
     // config new position based on the slider step
     var newPos = double.parse((findClosest(position)).toStringAsFixed(12));
-    var leftPos =
-        leftHandleValue; // double.parse((findClosest(leftHandleValue)).toStringAsFixed(12));
-    var rightPos =
-        rightHandleValue; //double.parse((findClosest(rightHandleValue)).toStringAsFixed(12));
+    var leftPos = leftHandleValue;
+    var rightPos = rightHandleValue;
 
     // new slider duration
     var newInterval = ((isLeftHandle
@@ -798,21 +822,13 @@ class RenderTimelineRangeSlider extends RenderBox {
     }
 
     // check min distance between handles
-    if (newInterval <= minInterval.inMinutes) {
-      if (isLeftHandle) {
-        rightPos = newPos + minDistance;
-      } else {
-        leftPos = newPos - minDistance;
-      }
+    if (newInterval < minInterval.inMinutes) {
+      return;
     }
 
     // check max distance between handles
-    else if (maxInterval != null && newInterval >= maxInterval!.inMinutes) {
-      if (isLeftHandle) {
-        rightPos = newPos + maxDistance;
-      } else {
-        leftPos = newPos - maxDistance;
-      }
+    else if (maxInterval != null && newInterval > maxInterval!.inMinutes) {
+      return;
     }
 
     // set new handle position
@@ -951,6 +967,7 @@ class RenderTimelineRangeSlider extends RenderBox {
   void onDragEnd() {
     developer.log('[TimeRangeSlider][onDragEnd]');
     sliderState = SliderState.none;
+    markNeedsPaint();
   }
 
   // Handle SliderState on drag down
@@ -973,8 +990,17 @@ class RenderTimelineRangeSlider extends RenderBox {
 
     var handleBound = 0.02;
 
+    //if outside teh slider area
+    if (details.localPosition.dy > sliderHeightArea) {
+      developer
+          .log('[TimeRangeSlider][onDragDown] Outside area selected (under)');
+
+      sliderState = SliderState.sliderArea;
+      return;
+    }
+
     //check if left handle is being dragged
-    if (posOffset >= (leftHandlePos - handleBound) &&
+    if (posOffset >= (leftHandlePos) &&
         posOffset <= (leftHandlePos + handleBound)) {
       developer.log('[TimeRangeSlider][onDragDown] Left Handle selected');
 
@@ -984,7 +1010,7 @@ class RenderTimelineRangeSlider extends RenderBox {
 
     //check if right handle is being dragged
     if (posOffset >= (rightHandlePos - handleBound) &&
-        posOffset <= (rightHandlePos + handleBound)) {
+        posOffset <= (rightHandlePos)) {
       developer.log('[TimeRangeSlider][onDragDown] Right Handle selected');
 
       sliderState = SliderState.rightHandle;
@@ -997,6 +1023,7 @@ class RenderTimelineRangeSlider extends RenderBox {
       developer.log('[TimeRangeSlider][onDragDown] Inside area selected');
 
       sliderState = SliderState.slider;
+      markNeedsPaint();
       return;
     } else {
       developer.log('[TimeRangeSlider][onDragDown] Outside area selected');
@@ -1009,6 +1036,12 @@ class RenderTimelineRangeSlider extends RenderBox {
   //ontapup
   void onTapUp(TapUpDetails details) {
     developer.log('[TimeRangeSlider][onTapUp]');
+
+    if (sliderState != SliderState.sliderArea) {
+      sliderState = SliderState.none;
+      markNeedsPaint();
+      return;
+    }
 
     // restrict a number between 0 and size of the widget
     // (to get rid of out bounds clicks)
