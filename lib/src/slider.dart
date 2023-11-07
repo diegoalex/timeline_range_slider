@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -127,7 +129,12 @@ class RenderTimelineRangeSlider extends RenderBox {
         developer.log('[TimeRangeSlider][drag] DRAG UPDATE');
 
         updateHandlePos(details);
-      };
+      }
+      ..gestureSettings = Platform.isAndroid
+          ? const DeviceGestureSettings(
+              touchSlop: 5.0,
+            )
+          : null;
     //tap gesture recognizer
 
     tapRecognizer = TapGestureRecognizer()
@@ -789,6 +796,39 @@ class RenderTimelineRangeSlider extends RenderBox {
     markNeedsPaint();
   }
 
+  void moveFixedSliderOnTap(double position) {
+    //get center position of slider
+    var newPos = double.parse((findClosest(position)).toStringAsFixed(12));
+
+    //ignore if select middle of the slider
+    if (newPos > leftHandleValue && newPos < rightHandleValue) {
+      return;
+    }
+
+    // get diff between center and new position
+    bool isLeft = newPos < rightHandleValue;
+
+    var diff = rightHandleValue - leftHandleValue;
+
+    developer.log(
+        '[TimeRangeSlider][moveFixedSlider] isLeft: $isLeft , newPos: $newPos , diff: $diff');
+
+    var newLeftValue = isLeft
+        ? newPos
+        : double.parse((findClosest(newPos - diff)).toStringAsFixed(12));
+    var newRightValue = !isLeft
+        ? newPos
+        : double.parse((findClosest(newPos + diff)).toStringAsFixed(12));
+
+    //move slider
+    leftHandleValue = newLeftValue;
+    rightHandleValue = newRightValue;
+
+    checkSliderAvailability();
+
+    markNeedsPaint();
+  }
+
   void resizeSlider(bool isLeftHandle, double position) {
     // config new position based on the slider step
     var newPos = double.parse((findClosest(position)).toStringAsFixed(12));
@@ -811,14 +851,6 @@ class RenderTimelineRangeSlider extends RenderBox {
     if (newPos < 0 || newPos > 1) {
       return;
     }
-
-    // // calculate the min and max distance between the handles
-    var minDistance =
-        ((minInterval.inMinutes * 100) / totalTimeInMinutes) / 100;
-    var maxDistance =
-        (((maxInterval ?? const Duration(seconds: 0)).inMinutes * 100) /
-                totalTimeInMinutes) /
-            100;
 
     developer.log('[TimeRangeSlider][updateHandlePos] ' +
         '${isLeftHandle ? 'LEFT' : 'RIGHT'} - newval: $newInterval ----- minval: ${minInterval.inMinutes} ----- maxval: ${maxInterval?.inMinutes}');
@@ -1062,7 +1094,7 @@ class RenderTimelineRangeSlider extends RenderBox {
     final pos = (x / size.width);
     final posOffset = pos + offsetDiff;
 
-    moveFixedSlider(posOffset);
+    moveFixedSliderOnTap(posOffset);
   }
 
   @override
