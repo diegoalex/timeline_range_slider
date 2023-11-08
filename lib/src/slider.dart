@@ -768,8 +768,11 @@ class RenderTimelineRangeSlider extends RenderBox {
     // get diff between center and new position
     var diff = centerPos - newPos;
 
+    var isLeft = diff > 0;
+    var sliderDuration = (rightHandleValue - leftHandleValue);
+
     developer.log(
-        '[TimeRangeSlider][moveFixedSlider] centerPos: $centerPos , newPos: $newPos , diff: $diff');
+        '[TimeRangeSlider][moveFixedSlider] centerPos: $centerPos , newPos: $newPos , diff: $diff , isLeft: $isLeft , sliderDuration: $sliderDuration');
 
     var leftDiff = leftHandleValue - diff;
     var rightDiff = rightHandleValue - diff;
@@ -778,6 +781,12 @@ class RenderTimelineRangeSlider extends RenderBox {
         double.parse((findClosest(leftDiff)).toStringAsFixed(12));
     var newRightValue =
         double.parse((findClosest(rightDiff)).toStringAsFixed(12));
+
+    if (isLeft) {
+      newRightValue = newLeftValue + sliderDuration;
+    } else {
+      newLeftValue = newRightValue - sliderDuration;
+    }
 
     // check if the new position is out of bounds
     if (leftDiff < 0) {
@@ -815,10 +824,12 @@ class RenderTimelineRangeSlider extends RenderBox {
 
     var newLeftValue = isLeft
         ? newPos
-        : double.parse((findClosest(newPos - diff)).toStringAsFixed(12));
+        : newPos -
+            diff; //double.parse((findClosest(newPos - diff)).toStringAsFixed(12));
     var newRightValue = !isLeft
         ? newPos
-        : double.parse((findClosest(newPos + diff)).toStringAsFixed(12));
+        : newPos +
+            diff; //double.parse((findClosest(newPos + diff)).toStringAsFixed(12));
 
     //move slider
     leftHandleValue = newLeftValue;
