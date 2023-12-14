@@ -66,6 +66,14 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   /// Defaults to grey color.
   final Color borderColor;
 
+  /// max interval border color.
+  /// Defaults to none
+  final Color? maxIntervalBorderColor;
+
+  /// min interval border color.
+  /// Defaults to none
+  final Color? minIntervalBorderColor;
+
   /// Color for displaying the current selected [Track] range.
   /// Defaults to green color.
   final Color selectedColor;
@@ -141,6 +149,14 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   /// Triggered when the handle position changes.
   final ValueChanged<Track>? onChanged;
 
+  /// Triggered when maxInterval is reached.
+  /// If maxInterval is null, this callback will never be called.
+  final ValueChanged<bool>? onMaxIntervalReached;
+
+  /// Triggered when minInterval is reached.
+  /// If minInterval is null, this callback will never be called.
+  final ValueChanged<bool>? onMinIntervalReached;
+
   /// List of [Track] which will fill the [TimelineRangeSlider] by the
   /// `isAvailable` property of [Track]. Not every range is needed to be
   /// filled - the rest of unfilled area will be filled with
@@ -158,6 +174,8 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   const TimelineRangeSlider({
     Key? key,
     this.borderColor = _defaultColorBorder,
+    this.maxIntervalBorderColor,
+    this.minIntervalBorderColor,
     this.unavailableColor = _defaultColorUnavailable,
     this.backgroundColor = _defaultColorTrack,
     this.selectedColor = _defaultColorSelected,
@@ -176,6 +194,8 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
     this.division = const TimeOfDay(hour: 0, minute: 30),
     required this.onChanged,
     required this.disabledIntervals,
+    this.onMaxIntervalReached,
+    this.onMinIntervalReached,
     this.showHandleArea = false,
     this.user24HourFormat = true,
   }) : super(key: key);
@@ -184,6 +204,8 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     return RenderTimelineRangeSlider(
       borderColor: borderColor,
+      maxIntervalBorderColor: maxIntervalBorderColor,
+      minIntervalBorderColor: minIntervalBorderColor,
       unavailableColor: unavailableColor,
       backgroundColor: backgroundColor,
       selectedColor: selectedColor,
@@ -202,6 +224,8 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
       division: division,
       onChanged: onChanged,
       disabledIntervals: disabledIntervals,
+      onMaxIntervalReached: onMaxIntervalReached,
+      onMinIntervalReached: onMinIntervalReached,
       showHandleArea: showHandleArea,
       user24HourFormat: user24HourFormat,
     );
@@ -214,6 +238,8 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
   ) {
     renderObject
       ..borderColor = borderColor
+      ..maxIntervalBorderColor = maxIntervalBorderColor
+      ..minIntervalBorderColor = minIntervalBorderColor
       ..unavailableColor = unavailableColor
       ..backgroundColor = backgroundColor
       ..selectedColor = selectedColor
@@ -231,6 +257,8 @@ class TimelineRangeSlider extends LeafRenderObjectWidget {
       ..maxTime = maxTime
       ..division = division
       ..onChanged = onChanged
+      ..onMaxIntervalReached = onMaxIntervalReached
+      ..onMinIntervalReached = onMinIntervalReached
       ..disabledIntervals = disabledIntervals
       ..showHandleArea = showHandleArea
       ..user24HourFormat = user24HourFormat;

@@ -46,10 +46,14 @@ enum SliderState { leftHandle, rightHandle, slider, sliderArea, none }
 /// * `maxTime`: The maximum time value for the timeline.
 /// * `division`: The time division for the timeline.
 /// * `onChanged`: A callback function that is called when the selected time range changes.
+/// * `onMaxIntervalReached`: A callback function that is called when the maximum time interval is reached.
+/// * `onMinIntervalReached`: A callback function that is called when the minimum time interval is reached.
 /// * `disabledIntervals`: A list of time intervals that are disabled.
 
 class RenderTimelineRangeSlider extends RenderBox {
   Color _borderColor;
+  Color? _maxIntervalBorderColor;
+  Color? _minIntervalBorderColor;
   Color _unavailableColor;
   Color _backgroundColor;
   Color _selectedColor;
@@ -67,6 +71,8 @@ class RenderTimelineRangeSlider extends RenderBox {
   TimeOfDay _maxTime;
   TimeOfDay _division;
   ValueChanged<Track>? _onChanged;
+  ValueChanged<bool>? _onMaxIntervalReached;
+  ValueChanged<bool>? _onMinIntervalReached;
   List<Track> _disabledIntervals;
   bool _showHandleArea;
   bool _user24HourFormat = true;
@@ -74,6 +80,8 @@ class RenderTimelineRangeSlider extends RenderBox {
   // constructor
   RenderTimelineRangeSlider({
     required Color borderColor,
+    required Color? maxIntervalBorderColor,
+    required Color? minIntervalBorderColor,
     required Color unavailableColor,
     required Color backgroundColor,
     required Color selectedColor,
@@ -91,10 +99,14 @@ class RenderTimelineRangeSlider extends RenderBox {
     required TimeOfDay maxTime,
     required TimeOfDay division,
     required ValueChanged<Track>? onChanged,
+    required ValueChanged<bool>? onMaxIntervalReached,
+    required ValueChanged<bool>? onMinIntervalReached,
     required List<Track> disabledIntervals,
     required bool showHandleArea,
     required bool user24HourFormat,
   })  : _borderColor = borderColor,
+        _maxIntervalBorderColor = maxIntervalBorderColor,
+        _minIntervalBorderColor = minIntervalBorderColor,
         _unavailableColor = unavailableColor,
         _backgroundColor = backgroundColor,
         _selectedColor = selectedColor,
@@ -112,6 +124,8 @@ class RenderTimelineRangeSlider extends RenderBox {
         _maxTime = maxTime,
         _division = division,
         _onChanged = onChanged,
+        _onMaxIntervalReached = onMaxIntervalReached,
+        _onMinIntervalReached = onMinIntervalReached,
         _disabledIntervals = disabledIntervals,
         _showHandleArea = showHandleArea,
         _user24HourFormat = user24HourFormat {
@@ -170,6 +184,24 @@ class RenderTimelineRangeSlider extends RenderBox {
       return;
     }
     _borderColor = value;
+    markNeedsPaint();
+  }
+
+  Color? get maxIntervalBorderColor => _maxIntervalBorderColor;
+  set maxIntervalBorderColor(Color? value) {
+    if (value == maxIntervalBorderColor) {
+      return;
+    }
+    _maxIntervalBorderColor = value;
+    markNeedsPaint();
+  }
+
+  Color? get minIntervalBorderColor => _minIntervalBorderColor;
+  set minIntervalBorderColor(Color? value) {
+    if (value == minIntervalBorderColor) {
+      return;
+    }
+    _minIntervalBorderColor = value;
     markNeedsPaint();
   }
 
@@ -328,6 +360,24 @@ class RenderTimelineRangeSlider extends RenderBox {
     markNeedsPaint();
   }
 
+  ValueChanged<bool>? get onMaxIntervalReached => _onMaxIntervalReached;
+  set onMaxIntervalReached(ValueChanged<bool>? value) {
+    if (value == onMaxIntervalReached) {
+      return;
+    }
+    _onMaxIntervalReached = value;
+    markNeedsPaint();
+  }
+
+  ValueChanged<bool>? get onMinIntervalReached => _onMinIntervalReached;
+  set onMinIntervalReached(ValueChanged<bool>? value) {
+    if (value == onMinIntervalReached) {
+      return;
+    }
+    _onMinIntervalReached = value;
+    markNeedsPaint();
+  }
+
   List<Track> get disabledIntervals => _disabledIntervals;
   set disabledIntervals(List<Track> value) {
     if (value == disabledIntervals) {
@@ -363,6 +413,9 @@ class RenderTimelineRangeSlider extends RenderBox {
   double rightHandleValue = 0.8;
 
   bool sliderBlocked = false;
+
+  bool maxIntervalReached = false;
+  bool minIntervalReached = false;
 
   bool loaded = false;
 
@@ -537,8 +590,30 @@ class RenderTimelineRangeSlider extends RenderBox {
       roundedPath,
       Paint()..color = sliderBlocked ? blockedColor : selectedColor,
     );
+
+    // add border when select the slider for move
     if (sliderState == SliderState.slider) {
       canvas.drawPath(roundedPath, paintBorder);
+    }
+
+    // Draw the max interval border
+    if (maxIntervalReached && _maxIntervalBorderColor != null) {
+      var border = Paint()
+        ..color = _maxIntervalBorderColor!
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      canvas.drawPath(roundedPath, border);
+    }
+
+    // Draw the min interval border
+    if (minIntervalReached && _minIntervalBorderColor != null) {
+      var border = Paint()
+        ..color = _minIntervalBorderColor!
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+
+      canvas.drawPath(roundedPath, border);
     }
   }
 
@@ -872,14 +947,53 @@ class RenderTimelineRangeSlider extends RenderBox {
       rightPos = newPos;
     }
 
+    var _minIntervalReached = minIntervalReached;
+    var _maxIntervalReached = maxIntervalReached;
+
+    // reset min/max interval flags
+    minIntervalReached = false;
+    maxIntervalReached = false;
+
     // check min distance between handles
     if (newInterval < minInterval.inMinutes) {
+      if (onMinIntervalReached != null) {
+        onMinIntervalReached!(true);
+      }
+
+      minIntervalReached = true;
+
       return;
     }
 
     // check max distance between handles
-    else if (maxInterval != null && newInterval > maxInterval!.inMinutes) {
-      return;
+    else if (maxInterval != null && newInterval >= maxInterval!.inMinutes) {
+      if (onMaxIntervalReached != null && !maxIntervalReached) {
+        onMaxIntervalReached!(true);
+      }
+
+      maxIntervalReached = true;
+
+      if (isLeftHandle) {
+        var maxRight = leftPos + (maxInterval!.inMinutes / totalTimeInMinutes);
+        rightPos = maxRight;
+      } else {
+        var maxLeft = rightPos - (maxInterval!.inMinutes / totalTimeInMinutes);
+        leftPos = maxLeft;
+      }
+
+      // return;
+    }
+
+    if (_maxIntervalReached != maxIntervalReached &&
+        maxIntervalReached == false &&
+        onMaxIntervalReached != null) {
+      onMaxIntervalReached!(false);
+    }
+
+    if (_minIntervalReached != minIntervalReached &&
+        minIntervalReached == false &&
+        onMinIntervalReached != null) {
+      onMinIntervalReached!(false);
     }
 
     // set new handle position
