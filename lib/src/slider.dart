@@ -444,6 +444,11 @@ class RenderTimelineRangeSlider extends RenderBox {
         (TimeOfDay.fromDateTime(selectedInterval.end).totalRangeTime -
                 minTime.totalRangeTime) /
             totalTimeInMinutes;
+
+    //call after a second
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      resizeSlider(true, leftHandleValue);
+    });
   }
 
   // Create the UI
