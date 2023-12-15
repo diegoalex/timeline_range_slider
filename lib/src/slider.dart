@@ -312,6 +312,14 @@ class RenderTimelineRangeSlider extends RenderBox {
       return;
     }
     _minInterval = value;
+
+    // if duration is greater than minInterval, mark as not reached
+    if (selectedInterval.duration > minInterval) {
+      minIntervalReached = false;
+    } else {
+      minIntervalReached = true;
+    }
+
     markNeedsPaint();
   }
 
@@ -321,6 +329,18 @@ class RenderTimelineRangeSlider extends RenderBox {
       return;
     }
     _maxInterval = value;
+
+    if (_maxInterval == null) {
+      maxIntervalReached = false;
+    } else {
+      // if duration is greater than maxInterval, mark as reached
+      if (selectedInterval.duration >= maxInterval!) {
+        maxIntervalReached = true;
+      } else {
+        maxIntervalReached = false;
+      }
+    }
+
     markNeedsPaint();
   }
 
